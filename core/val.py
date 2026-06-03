@@ -1,7 +1,3 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
-#
-# Developed by Shangchen Zhou <shangchenzhou@gmail.com>
 import os
 import utils.network_utils as net_utils
 from losses.losses import *

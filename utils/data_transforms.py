@@ -1,7 +1,3 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
-# 
-# Developed by Shangchen Zhou <shangchenzhou@gmail.com>
 '''ref: http://pytorch.org/docs/master/torchvision/transforms.html'''
 
 

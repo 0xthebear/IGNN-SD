@@ -70,3 +70,21 @@ python runner.py \
         --testname [Set5, Set14, BSD100, Urban100, Manga109]\
         --out [output path]
 ```
+
+Use the following command to test the network on your demo images (w/o GT):
+```
+python runner.py \
+        --gpu [gpu_id]\
+        --phase 'test'\
+        --weights './ckpt/IGNN_x[2/3/4].pth'\
+        --scale [2/3/4]\
+        --demopath [test folder path]\
+        --testname 'Demo'\
+        --out [output path]
+```
+
+You can also use the following simple command with different settings in config.py:
+
+```
+python runner.py
+```

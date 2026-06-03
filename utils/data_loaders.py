@@ -1,8 +1,3 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
-# 
-# Developed by Shangchen Zhou <shangchenzhou@gmail.com>
-
 import cv2
 import json
 import os

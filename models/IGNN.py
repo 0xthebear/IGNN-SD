@@ -1,8 +1,3 @@
-#!/usr/bin/pythonupsampler
-# -*- coding: utf-8 -*-
-#
-# Developed by Shangchen Zhou <shangchenzhou@gmail.com>
-
 from models.submodules import *
 from models.VGG19 import VGG19
 from config import cfg
