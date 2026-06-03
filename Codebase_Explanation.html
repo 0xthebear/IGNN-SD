@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IGNN Codebase Explanation</title>
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      line-height: 1.7;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1a1f2e 0%, #16213e 50%, #0f3460 100%);
+      border-bottom: 1px solid #2d3748;
+      padding: 3rem 2rem 2.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    header::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 60% 50%, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    header h1 {
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: #f8fafc;
+    }
+
+    header h1 span {
+      background: linear-gradient(90deg, #818cf8, #38bdf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    header .intro {
+      margin-top: 1rem;
+      color: #94a3b8;
+      font-size: 1rem;
+      max-width: 720px;
+      margin-inline: auto;
+    }
+
+    .tags {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 1.25rem;
+    }
+
+    .tag {
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid rgba(99, 102, 241, 0.35);
+      color: #a5b4fc;
+      border-radius: 9999px;
+      padding: 0.25rem 0.85rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    main {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 4rem;
+    }
+
+    .section-title {
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: #f1f5f9;
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid #1e293b;
+    }
+
+    .components {
+      display: grid;
+      gap: 1.1rem;
+    }
+
+    .card {
+      background: #161b27;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      overflow: hidden;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .card:hover {
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1.1rem 1.4rem;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .card-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.78rem;
+      font-weight: 700;
+      flex-shrink: 0;
+      background: rgba(99, 102, 241, 0.2);
+      color: #818cf8;
+      border: 1px solid rgba(99, 102, 241, 0.3);
+    }
+
+    .card-icon {
+      font-size: 1.25rem;
+      flex-shrink: 0;
+    }
+
+    .card-title {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .card-title h3 {
+      font-size: 0.97rem;
+      font-weight: 600;
+      color: #e2e8f0;
+    }
+
+    .card-title .path {
+      font-family: 'Courier New', monospace;
+      font-size: 0.74rem;
+      color: #4f6282;
+      margin-top: 0.15rem;
+      display: block;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .chevron {
+      color: #475569;
+      font-size: 0.8rem;
+      transition: transform 0.25s;
+      flex-shrink: 0;
+    }
+
+    .card.open .chevron {
+      transform: rotate(180deg);
+    }
+
+    .card-body {
+      display: none;
+      padding: 0 1.4rem 1.4rem;
+      border-top: 1px solid #1e293b;
+    }
+
+    .card.open .card-body {
+      display: block;
+    }
+
+    .card-body .desc {
+      color: #94a3b8;
+      font-size: 0.91rem;
+      margin-top: 1rem;
+      margin-bottom: 0.75rem;
+    }
+
+    /* top-level bullet list */
+    .card-body>ul {
+      list-style: none;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .card-body>ul>li {
+      font-size: 0.9rem;
+      color: #94a3b8;
+      padding-left: 1.2rem;
+      position: relative;
+    }
+
+    .card-body>ul>li::before {
+      content: '›';
+      color: #6366f1;
+      font-weight: 700;
+      position: absolute;
+      left: 0;
+      top: 0;
+    }
+
+    /* nested sub-lists */
+    .card-body ul ul {
+      list-style: none;
+      padding: 0;
+      margin-top: 0.4rem;
+      margin-left: 0.6rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .card-body ul ul li {
+      font-size: 0.875rem;
+      color: #7a8fa8;
+      padding-left: 1.2rem;
+      position: relative;
+    }
+
+    .card-body ul ul li::before {
+      content: '–';
+      color: #334155;
+      position: absolute;
+      left: 0;
+    }
+
+    code {
+      font-family: 'Courier New', monospace;
+      font-size: 0.83em;
+      background: #0d1117;
+      border: 1px solid #2d3748;
+      border-radius: 4px;
+      padding: 0.1em 0.4em;
+      color: #7dd3fc;
+    }
+
+    em {
+      font-style: normal;
+      color: #c4b5fd;
+      font-weight: 500;
+    }
+
+    /* per-category accent colours */
+    .c-setup .card-header {
+      border-left: 3px solid #f59e0b;
+    }
+
+    .c-util .card-header {
+      border-left: 3px solid #38bdf8;
+    }
+
+    .c-model .card-header {
+      border-left: 3px solid #818cf8;
+    }
+
+    .c-ops .card-header {
+      border-left: 3px solid #34d399;
+    }
+
+    .c-cuda .card-header {
+      border-left: 3px solid #10b981;
+    }
+
+    .c-train .card-header {
+      border-left: 3px solid #f87171;
+    }
+
+    .c-setup:hover {
+      border-color: #f59e0b;
+    }
+
+    .c-util:hover {
+      border-color: #38bdf8;
+    }
+
+    .c-model:hover {
+      border-color: #818cf8;
+    }
+
+    .c-ops:hover {
+      border-color: #34d399;
+    }
+
+    .c-cuda:hover {
+      border-color: #10b981;
+    }
+
+    .c-train:hover {
+      border-color: #f87171;
+    }
+
+    footer {
+      text-align: center;
+      color: #2d3a4a;
+      font-size: 0.8rem;
+      padding: 1.5rem;
+      border-top: 1px solid #1e293b;
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <h1>Image Guided <span>Neural Network</span></h1>
+    <!-- <p class="intro">
+      This codebase implements an IGNN for tasks like image super-resolution or denoising, leveraging graph-based
+      aggregation. It includes modules for data preparation, model definition, custom CUDA operations for efficiency,
+      and training/testing pipelines.
+    </p> -->
+    <div class="tags">
+      <span class="tag">PyTorch</span>
+      <span class="tag">CUDA</span>
+      <span class="tag">Graph Neural Network</span>
+      <span class="tag">Super-Resolution</span>
+      <span class="tag">Denoising</span>
+      <span class="tag">DIV2K</span>
+      <span class="tag">N3Net</span>
+    </div>
+  </header>
+
+  <main>
+    <h2 class="section-title">Codebase Explanation — Key Components</h2>
+    <div class="components">
+
+      <!-- 1. README -->
+      <div class="card c-setup" onclick="toggle(this)">
+        <div class="card-header">
+          <div class="card-num">1</div>
+          <div class="card-icon">📖</div>
+          <div class="card-title">
+            <h3>Project Setup &amp; README</h3>
+            <span class="path">./IGNN/README.md</span>
+          </div>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="card-body">
+          <p class="desc">This file serves as the primary guide for setting up and using the IGNN project. It outlines:
+          </p>
+          <ul>
+            <li><em>Data Preparation:</em> Instructions to crop the DIV2K dataset into sub-images using a Python script.
+            </li>
+            <li><em>Dependencies and Installation:</em> Steps to create a <code>conda</code> environment with specific
+              versions of PyTorch, torchvision, and CUDA, and then install custom libraries like <code>PyInn</code> and
+              <code>matmul_cuda</code>, along with other Python dependencies.</li>
+            <li><em>Training:</em> Commands for training the network from scratch or resuming training, with options for
+              GPU, phase, scale factor, dataset root, and output path. It also mentions a simplified command using
+              <code>config.py</code>.</li>
+            <li><em>Testing:</em> Commands for testing the network on benchmark datasets, specifying GPU, phase,
+              weights, scale, dataset root, test set name, and output path.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 2. imresize.py -->
+      <div class="card c-util" onclick="toggle(this)">
+        <div class="card-header">
+          <div class="card-num">2</div>
+          <div class="card-icon">🖼️</div>
+          <div class="card-title">
+            <h3>Image Resize Utility</h3>
+            <span class="path">./IGNN/utils/imresize.py</span>
+          </div>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="card-body">
+          <p class="desc">This utility file provides a Python implementation of MATLAB's <code>imresize</code> function,
+            specifically for bicubic interpolation.</p>
+          <ul>
+            <li><code>cubic(x)</code>: Implements the cubic kernel function used in bicubic interpolation.</li>
+            <li><code>calculate_weights_indices(...)</code>: Computes the interpolation weights and corresponding
+              indices for resizing an image along one dimension. It handles antialiasing and boundary conditions using
+              symmetric padding.</li>
+            <li><code>imresize(img, scale, antialiasing=True)</code>: The main function that takes an image tensor, a
+              scale factor, and an antialiasing flag, and returns the resized image. It performs the resizing
+              independently along the height and width dimensions, handling symmetric padding for boundary pixels.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 3. graph_agg.py -->
+      <div class="card c-model" onclick="toggle(this)">
+        <div class="card-header">
+          <div class="card-num">3</div>
+          <div class="card-icon">🕸️</div>
+          <div class="card-title">
+            <h3>Graph Construction &amp; Aggregation</h3>
+            <span class="path">./IGNN/models/graph_agg.py</span>
+          </div>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="card-body">
+          <p class="desc">This file contains the core logic for graph construction and aggregation, which is central to
+            the IGNN model. It's based on the N3Net code.</p>
+          <ul>
+            <li><code>compute_distances(xe, ye, I, train=True)</code>: Calculates pairwise Euclidean distances between
+              query embeddings (<code>ye</code>) and database embeddings (<code>xe</code>). It can optionally use an
+              index tensor <code>I</code> to restrict the search to a local window, improving efficiency.</li>
+            <li><code>hard_knn(D, k, I)</code>: Performs a hard k-nearest neighbors search, returning the <code>k</code>
+              smallest distances (scores) and their corresponding indices from the distance matrix <code>D</code>. If
+              <code>WITH_WINDOW</code> is enabled, it maps the indices back to the original feature space using
+              <code>I</code>.</li>
+            <li><code>GraphConstruct(nn.Module)</code>: A module responsible for constructing the graph by finding
+              nearest neighbors.
+              <ul>
+                <li>It takes <code>xe</code> (son features/database) and <code>ye</code> (father features/query) as
+                  input.</li>
+                <li>It converts these features into patches using <code>ops.im2patch</code>.</li>
+                <li>It uses <code>self.indexer</code> (which is <code>index_neighbours</code>) to define a search window
+                  for potential neighbors.</li>
+                <li>It then calls <code>self.graph_k</code> to compute distances and find the <code>k</code> nearest
+                  neighbors, returning their similarity scores, indices, and optionally difference vectors.</li>
+              </ul>
+            </li>
+            <li><code>GraphAggregation(nn.Module)</code>: A module responsible for aggregating features from the
+              identified neighbors.
+              <ul>
+                <li>It takes <code>y</code> (query LR features), <code>yd</code> (pixel-shuffled downsampled features of
+                  <code>y</code>), and <code>idx_k</code> (indices of k-nearest neighbors) as input.</li>
+                <li>It converts <code>y</code> and <code>yd</code> into patches.</li>
+                <li><code>self.aggregation</code> gathers features from <code>yd_patch</code> based on
+                  <code>idx_k</code>.</li>
+                <li>It can optionally apply adaptive instance normalization (<code>WITH_ADAIN_NROM</code>).</li>
+                <li>Finally, it reconstructs the aggregated features from patches back into an image-like tensor using
+                  <code>ops.patch2im</code>, handling scaling for super-resolution.</li>
+              </ul>
+            </li>
+            <li><code>index_neighbours(xe_patch, ye_patch, window_size, scale)</code>: Generates index tensors to define
+              local neighborhoods for each query patch. This function is crucial for efficient neighbor search within a
+              limited window and caches results for speed.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 4. ops.py -->
+      <div class="card c-ops" onclick="toggle(this)">
+        <div class="card-header">
+          <div class="card-num">4</div>
+          <div class="card-icon">⚙️</div>
+          <div class="card-title">
+            <h3>Low-Level Operations</h3>
+            <span class="path">./IGNN/models/lib/ops.py</span>
+          </div>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="card-body">
+          <p class="desc">This file provides various low-level operations, including custom CUDA-accelerated functions
+            and patch manipulation utilities.</p>
+          <ul>
+            <li><code>IndexedMatmul1Efficient</code> and <code>IndexedMatmul2Efficient</code>: Custom
+              <code>torch.autograd.Function</code> implementations that wrap CUDA kernels for efficient indexed matrix
+              multiplications. These are critical for performance in graph operations where specific elements need to be
+              accessed and multiplied.</li>
+            <li><code>indexed_matmul_1_efficient(x,y,I)</code> and <code>indexed_matmul_2_efficient(x,y,I,
+                chunk_size=1024)</code>: Convenience functions to call the custom autograd functions.</li>
+            <li><code>euclidean_distance(x,y)</code>: Computes the squared Euclidean distance between two tensors.</li>
+            <li><code>calc_padding(x_shape, patchsize, stride, padding=None)</code>: Calculates the necessary padding
+              for an image before converting it to patches.</li>
+            <li><code>im2patch(x, patchsize, stride, padding=None, returnpadding=False)</code>: Converts an image tensor
+              <code>x</code> into overlapping patches. It uses <code>pyinn.im2col</code> for efficiency.</li>
+            <li><code>patch2im(x_patch, patchsize, stride, padding)</code>: Reconstructs an image from patches,
+              effectively the inverse of <code>im2patch</code>. It uses <code>pyinn.col2im</code>.</li>
+            <li><code>Im2Patch(nn.Module)</code> and <code>Patch2Im(nn.Module)</code>: <code>nn.Module</code> wrappers
+              for <code>im2patch</code> and <code>patch2im</code>.</li>
+            <li><code>_finfo(tensor)</code> and <code>clamp_probs(probs)</code>: Utilities for handling floating-point
+              precision and clamping probabilities.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 5. setup.py -->
+      <div class="card c-cuda" onclick="toggle(this)">
+        <div class="card-header">
+          <div class="card-num">5</div>
+          <div class="card-icon">🔧</div>
+          <div class="card-title">
+            <h3>CUDA Extension Builder</h3>
+            <span class="path">./IGNN/models/lib/setup.py</span>
+          </div>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="card-body">
+          <p class="desc">This <code>setuptools</code> script is used to build the custom CUDA extension
+            <code>matmul_cuda</code>. It compiles the C++ and CUDA source files (<code>matmul.cpp</code>,
+            <code>matmul1_kernel.cu</code>, <code>matmul1_bwd_kernel.cu</code>) into a Python-loadable module, enabling
+            GPU-accelerated indexed matrix operations.</p>
+        </div>
+      </div>
+
+      <!-- 6. matmul.cpp -->
+      <div class="card c-cuda" onclick="toggle(this)">
+        <div class="card-header">
+          <div class="card-num">6</div>
+          <div class="card-icon">🔗</div>
+          <div class="card-title">
+            <h3>PyTorch–CUDA Interface</h3>
+            <span class="path">./IGNN/models/lib/matmul.cpp</span>
+          </div>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="card-body">
+          <p class="desc">This C++ file acts as the interface between PyTorch and the CUDA kernels. It uses
+            <code>pybind11</code> to expose the <code>matmul1_cuda</code> and <code>matmul1_bwd_cuda</code> functions
+            (defined in the <code>.cu</code> files) to Python.</p>
+        </div>
+      </div>
+
+      <!-- 7. matmul1_kernel.cu -->
+      <div class="card c-cuda" onclick="toggle(this)">
+        <div class="card-header">
+          <div class="card-num">7</div>
+          <div class="card-icon">⚡</div>
+          <div class="card-title">
+            <h3>CUDA Forward Kernel</h3>
+            <span class="path">./IGNN/models/lib/matmul1_kernel.cu</span>
+          </div>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="card-body">
+          <p class="desc">This CUDA kernel implements the forward pass of the <code>matmul1</code> operation. It
+            performs an indexed matrix multiplication on the GPU, where <code>mat_i</code> provides the indices for
+            <code>mat_x</code>. This is optimized for parallel execution on CUDA devices.</p>
+        </div>
+      </div>
+
+      <!-- 8. build.py -->
+      <div class="card c-train" onclick="toggle(this)">
+        <div class="card-header">
+          <div class="card-num">8</div>
+          <div class="card-icon">🏗️</div>
+          <div class="card-title">
+            <h3>Training &amp; Testing Orchestrator</h3>
+            <span class="path">./IGNN/core/build.py</span>
+          </div>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="card-body">
+          <p class="desc">This script orchestrates the overall training and testing process.</p>
+          <ul>
+            <li><em>Data Loaders:</em> Sets up data augmentation pipelines (<code>train_transforms</code>,
+              <code>test_transforms</code>) and initializes DataLoader objects for training and validation/testing
+              datasets.</li>
+            <li><em>Network Initialization:</em> Instantiates the specified SR network (<code>IGNN</code> in this case)
+              and initializes its weights.</li>
+            <li><em>Optimizer:</em> Configures the Adam optimizer for network training.</li>
+            <li><em>GPU Support:</em> Wraps the network with <code>torch.nn.DataParallel</code> for multi-GPU training
+              if available.</li>
+            <li><em>Resume/Load Checkpoint:</em> Handles loading pre-trained weights for resuming training or for
+              testing.</li>
+            <li><em>Training/Testing Execution:</em> Calls the <code>train</code> function for training or
+              <code>test</code>/<code>test_woGT</code> functions for evaluation based on the
+              <code>cfg.NETWORK.PHASE</code>.</li>
+            <li><em>Learning Rate Scheduler:</em> Sets up a <code>MultiStepLR</code> scheduler to adjust the learning
+              rate during training.</li>
+            <li><em>TensorBoard:</em> Initializes <code>SummaryWriter</code> for logging training and validation
+              metrics.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 9. train.py -->
+      <div class="card c-train" onclick="toggle(this)">
+        <div class="card-header">
+          <div class="card-num">9</div>
+          <div class="card-icon">🚀</div>
+          <div class="card-title">
+            <h3>Training Loop</h3>
+            <span class="path">./IGNN/core/train.py</span>
+          </div>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="card-body">
+          <p class="desc">This file defines the main training loop.</p>
+          <ul>
+            <li><em>Epoch Loop:</em> Iterates through a specified number of epochs.</li>
+            <li><em>Batch Loop:</em> Processes data in batches from the <code>train_data_loader</code>.</li>
+            <li><em>Loss Calculation:</em>
+              <ul>
+                <li>Calculates <code>pixel_loss</code> (e.g., L1 or L2 loss) between the network's output and the ground
+                  truth.</li>
+                <li>Optionally calculates <code>perceptualLoss</code> using a VGG19 network if
+                  <code>cfg.TRAIN.USE_PERCET_LOSS</code> is enabled.</li>
+                <li>Combines these into <code>total_loss</code>.</li>
+              </ul>
+            </li>
+            <li><em>Optimization:</em> Performs backpropagation (<code>total_loss.backward()</code>) and updates network
+              weights (<code>solver.step()</code>).</li>
+            <li><em>Metrics and Logging:</em> Tracks batch time, data time, and various losses using
+              <code>net_utils.AverageMeter</code>. Logs these metrics to TensorBoard (<code>train_writer</code>).</li>
+            <li><em>Validation:</em> Periodically calls the <code>val</code> function (from <code>core/val.py</code>,
+              not provided but implied) to evaluate the model on the validation set.</li>
+            <li><em>Checkpointing:</em> Saves model checkpoints, including the best performing model based on PSNR.</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- <footer>IGNN Codebase Reference &mdash; 9 components</footer> -->
+
+  <script>
+    function toggle(card) {
+      card.classList.toggle('open');
+    }
+    // open all cards by default
+    document.querySelectorAll('.card').forEach(c => c.classList.add('open'));
+  </script>
+
+</body>
+
+</html>
