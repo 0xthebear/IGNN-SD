@@ -90,4 +90,5 @@ python runner.py
 ```
 
 ## CodeBase Explanation
-[Link](./Codebase_Explanation.html)
+[Codebase Explanation (HTML)](./Codebase_Explanation.html)
+[Codebase Explanation (MD)](./Codebase_Explanation.md)
